@@ -5,7 +5,7 @@
 #include <sdkhooks>
 #include <left4dhooks>
 
-#define PLUGIN_VERSION "1.0.0"
+#define PLUGIN_VERSION "1.0.1"
 #define PLUGIN_TAG "[TTG]"
 #define PLUGIN_TAG_COLOR "\x04"
 #define PLUGIN_CHAT_COLOR "\x03"
@@ -15,9 +15,11 @@
 #define TEAM_BLUE 1
 
 ConVar convar_Enabled;
+ConVar convar_Advertisements;
 ConVar convar_FriendlyFire;
 
 int g_Team[MAXPLAYERS + 1];
+int g_Advert;
 
 public Plugin myinfo = {
 	name = "[ANY] Tag Team Coop",
@@ -30,6 +32,7 @@ public Plugin myinfo = {
 public void OnPluginStart() {
 	CreateConVar("ttc_version", PLUGIN_VERSION, "The version of the Tag Team Coop plugin.", FCVAR_NOTIFY);
 	convar_Enabled = CreateConVar("sm_ttc_enabled", "1", "Is the Tag Team Coop gamemode enabled or disabled?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	convar_Advertisements = CreateConVar("sm_ttc_advertisements", "1", "Should we be showing advertisements? (Would be helpful to keep on but up to you.)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	convar_FriendlyFire = CreateConVar("sm_ttc_friendly_fire", "1", "Are you allowed to damage your teammate at all?", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 
 	RegAdminCmd("sm_assignteams", Command_AssignTeams, ADMFLAG_GENERIC, "Automatically assign teams to players.");
@@ -43,6 +46,9 @@ public void OnPluginStart() {
 			OnClientPutInServer(i);
 		}
 	}
+
+	g_Advert = GetRandomInt(0, 3);
+	CreateTimer(180.0, Timer_Advert, _, TIMER_REPEAT);
 
 	PrintAll("Tag Team Coop gamemode loaded.");
 }
@@ -207,6 +213,27 @@ public Action L4D2_BackpackItem_StartAction(int client, int entity, any type) {
 	if (g_Team[client] != TEAM_NONE && g_Team[client] != g_Team[target]) {
 		Print(client, "You can't heal the enemy team.");
 		return Plugin_Handled;
+	}
+
+	return Plugin_Continue;
+}
+
+public Action Timer_Advert(Handle timer) {
+	if (!convar_Advertisements.BoolValue) {
+		return Plugin_Continue;
+	}
+
+	g_Advert++;
+
+	if (g_Advert > 3) {
+		g_Advert = 0;
+	}
+
+	switch (g_Advert) {
+		case 0: PrintAll("Join the Discord server for the mode: https://discord.gg/GB7FJ2x5jU");
+		case 1: PrintAll("Feel free to make suggestions and help with the mode: https://github.com/KeithGDR/l4d2-tag-team-coop");
+		case 2: PrintAll("Report bugs here: https://github.com/KeithGDR/l4d2-tag-team-coop/issues");
+		case 3: PrintAll("Feel free to donate here: https://ko-fi.com/KeithGDR");
 	}
 
 	return Plugin_Continue;
